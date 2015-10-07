@@ -6,9 +6,17 @@ import wave
 import numpy
 
 import pulseaudio as pa
-out = []
-with pa.simple.open(direction=pa.STREAM_PLAYBACK, format=pa.SAMPLE_S16LE, rate=44100, channels=1) as player:
-    for x in range(0,440):
-        out = numpy.sin(440.0 / 44100 * 2 * numpy.pi * numpy.array(range(0,100)))*32000
-        player.write(out.astype(numpy.int16).tostring())
-    player.drain()
+#out = []
+#with pa.simple.open(direction=pa.STREAM_PLAYBACK, format=pa.SAMPLE_S16LE, rate=44100, channels=1) as player:
+#    for x in range(0,440):
+#        out = numpy.sin(440.0 / 44100 * 2 * numpy.pi * numpy.array(range(0,100)))*32000
+#        player.write(out.astype(numpy.int16).tostring())
+#    player.drain()
+
+def playtone(freq, amplitude, time):
+    tab = []
+    with pa.simple.open(direction=pa.STREAM_PLAYBACK, format=pa.SAMPLE_S16LE, rate=44100, channels=1) as player:
+        for x in range(0,freq*time):
+            tab = numpy.sin(freq / 44100.0 * 2 * numpy.pi * numpy.array(range(0,44100/freq)))*amplitude
+            player.write(tab.astype(numpy.int16).tostring())
+        player.drain()
