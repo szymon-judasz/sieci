@@ -21,3 +21,7 @@ def playtone(freq, amplitude, time):
             tab = numpy.sin(freq / 44100.0 * 2 * numpy.pi * numpy.array(range(0,44100/freq)))*amplitude
             player.write(tab.astype(numpy.int16).tostring())
         player.drain()
+
+def generaterawdata(freq, amplitude, time):
+    tab = (numpy.sin(freq / 44100.0 * 2 * numpy.pi * numpy.array(range(0,44100/freq)))*amplitude).astype(numpy.int16)
+    return tab
