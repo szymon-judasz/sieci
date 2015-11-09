@@ -11,12 +11,15 @@ CRC = 0x04C11DB7
 CRCSIZE = 8 * 4  # rozmiar CR
 
 # czestotliwosci sygnalow wysoki/niski
-HIGH = 440
-LOW = 220
+HIGH = 880
+LOW = 440
+
 
 # jak glosno nadawac
 AMPLITUDE = 32000
 
+# jak glosny musi byc sygnal, by byl sygnalem
+THRESHOLD = 10000000
 # predkosc transmisji
 BITRATE = 1
 

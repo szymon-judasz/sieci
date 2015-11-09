@@ -18,13 +18,17 @@ def playtone(freq, amplitude, time):
             player.write(tab.astype(numpy.int16).tostring())
         player.drain()
 
+
 def generaterawdata(freq, amplitude, time):
-    tab = (numpy.sin(freq / 44100.0 * 2 * numpy.pi * numpy.array(range(0, numpy.ceil(44100 * time).astype(int)))) * amplitude).astype(
+    tab = (numpy.sin(freq / 44100.0 * 2 * numpy.pi * numpy.array(
+        range(0, numpy.ceil(44100 * time).astype(int)))) * amplitude).astype(
         numpy.int16)
     return tab
 
+
 lowsignal = generaterawdata(config.LOW, config.AMPLITUDE, config.BITRATE).astype(numpy.int16).tostring()
 highsignal = generaterawdata(config.HIGH, config.AMPLITUDE, config.BITRATE).astype(numpy.int16).tostring()
+
 
 def sendData(source):
     with pa.simple.open(direction=pa.STREAM_PLAYBACK, format=pa.SAMPLE_S16LE, rate=44100, channels=1) as player:
@@ -38,5 +42,8 @@ def sendData(source):
         player.drain()
         player.close()
 
-sendData(pf.buildPacket(14, 15, "ab"))
-#playtone(440, 30000, 1)
+
+x = pf.nrzi(pf.inttobyte(1023, 10))
+
+while 1 == 1:
+    sendData(pf.buildPacket(10, 10, "ala"))
