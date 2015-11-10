@@ -21,6 +21,6 @@ AMPLITUDE = 32000
 # jak glosny musi byc sygnal, by byl sygnalem
 THRESHOLD = 10000000
 # predkosc transmisji
-BITRATE = 1
+BITRATE = 2
 
 NRZI_START = 0 # ktory bit startuje w nrzi

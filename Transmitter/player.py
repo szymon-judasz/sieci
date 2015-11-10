@@ -25,18 +25,16 @@ def generaterawdata(freq, amplitude, time):
     return tab
 
 
-lowsignal = generaterawdata(config.LOW, config.AMPLITUDE, config.BITRATE).astype(numpy.int16).tostring()
-highsignal = generaterawdata(config.HIGH, config.AMPLITUDE, config.BITRATE).astype(numpy.int16).tostring()
+lowsignal = generaterawdata(config.LOW, config.AMPLITUDE, 1.0/config.BITRATE).astype(numpy.int16).tostring()
+highsignal = generaterawdata(config.HIGH, config.AMPLITUDE, 1.0/config.BITRATE).astype(numpy.int16).tostring()
 
 
 def sendData(source):
     with pa.simple.open(direction=pa.STREAM_PLAYBACK, format=pa.SAMPLE_S16LE, rate=44100, channels=1) as player:
         for i in range(0, len(source)):
             if source[i] == 1:
-                print('1')
                 player.write(highsignal)
             else:
-                print('0')
                 player.write(lowsignal)
         player.drain()
         player.close()
@@ -49,4 +47,4 @@ print len(highsignal)
 print len(lowsignal)
 
 while True:
-    sendData([1, 0, 1, 0])
+    sendData([1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0])
