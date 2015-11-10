@@ -13,9 +13,8 @@ import PacketFactory as pf
 
 def playtone(freq, amplitude, time):
     with pa.simple.open(direction=pa.STREAM_PLAYBACK, format=pa.SAMPLE_S16LE, rate=44100, channels=1) as player:
-        for x in range(0, int(freq * time)):
-            tab = numpy.sin(freq / 44100.0 * 2 * numpy.pi * numpy.array(range(0, 44100 / freq))) * amplitude
-            player.write(tab.astype(numpy.int16).tostring())
+        tab = numpy.sin(freq / 44100.0 * 2 * numpy.pi * numpy.array(range(0, 44100 * time))) * amplitude
+        player.write(tab.astype(numpy.int16).tostring())
         player.drain()
 
 
@@ -45,5 +44,9 @@ def sendData(source):
 
 x = pf.nrzi(pf.inttobyte(1023, 10))
 
-while 1 == 1:
-    sendData(pf.buildPacket(10, 10, "ala"))
+#len(pf.buildPacket(127,127, "Ala ma kota"))
+print len(highsignal)
+print len(lowsignal)
+
+while True:
+    sendData([1, 0, 1, 0])

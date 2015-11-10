@@ -1,21 +1,22 @@
 #!/usr/bin/env python
 # vim:ts=4:sts=4:sw=4:expandtab
 
-import sys
-import wave
 import time
 import numpy as np
+
 import config
 import pulseaudio as pa
 
 recorder = pa.simple.open(direction=pa.STREAM_RECORD, format=pa.SAMPLE_S16LE, rate=44100, channels=1)
 
+samplerate = 44100
+
 
 def record(probeduration):
-    samplerate = 44100
-    nosample = int(samplerate * probeduration)
+    nosample = int(samplerate * probeduration) * 2
     # with pa.simple.open(direction=pa.STREAM_RECORD, format=pa.SAMPLE_S16LE, rate=samplerate, channels=1) as recorder:
-    data = recorder.read(nosample * 2)
+    data = recorder.read(nosample)
+    data = np.fromstring(data, np.int16)
     return data
 
 
@@ -23,55 +24,76 @@ def getmax(d):
     return np.argmax(d)
 
 
-def generaterawdata(freq, amplitude, time):
-    tab = (np.sin(freq / 44100.0 * 2 * np.pi * np.array(range(0, int(44100 * time)))) * amplitude).astype(np.int16)
-    return tab
-
-
 def quickfft(data):
-    d = np.absolute(np.fft.fft((np.fromstring(data, np.int16)))).astype(int)
+    d = np.absolute(np.fft.fft(data)).astype(int)
     return d
 
 
-def computefreq(data, time):
-    return getmax(quickfft(data)) / time
+def computefreq(data, period):  # TODO
+    return getmax(quickfft(data)) / period
 
 
-def pitchanalyze(time):
-    return computefreq(record(time), time)
+def pitchanalyze(period):
+    return computefreq(record(period), period)
 
 
-def getTonePower(tone, data):
+def gettonepower(tone, data):
     fft = quickfft(data)
     amplitude = fft[tone * config.BITRATE]
     return amplitude
 
 
-def detectTranssmission(timeout=15):  # blocking operation,
-    tryNo = timeout / config.BITRATE
-    while tryNo > 0:
+def detecttransmission(timeout=15):  # blocking operation,
+    tryno = timeout / config.BITRATE
+    while tryno > 0:
         data = record(config.BITRATE)
-        lowpower = getTonePower(config.LOW, data)
-        highpower = getTonePower(config.HIGH, data)
+        lowpower = gettonepower(config.LOW, data)
+        highpower = gettonepower(config.HIGH, data)
         if lowpower > config.THRESHOLD or highpower > config.THRESHOLD:
             break
-        tryNo -= 1
+        tryno -= 1
 
-def tabdrift(source, nosamples):
+
+def tabdrift(source, padding):  # source is a tab, padding is an offset
     source = np.array(source)
-    #x = source.
-
-def synchronize(data):
-    x = 1
+    x = np.split(source, [padding, samplerate + padding])
+    return x[1]
 
 
-def readData():
-    detectTranssmission()
+def getstronger(source):  # source is record(config.BITRATE)
+    return config.HIGH if gettonepower(config.HIGH, source) > gettonepower(config.LOW, source) else config.LOW
+
+
+def synchronize():  # or get record(3 * config.Bitrate), start in the middle and move left, right
+    data = record(2 * config.BITRATE)
+    windowsize = samplerate
+    cursor = 0
+    offset = windowsize
+    # get lower signal
+    # move right and check if amplitude has risen
+    # if yes, add offset to cursor
+    # if no, nop
+    signal = getstronger(tabdrift(data, 0))
+    signal = config.LOW if signal == config.HIGH else config.HIGH
+    for i in range(0, 5):
+        offset = int(2 * offset / 3)  # dividing by 2 wasn't working well
+        if gettonepower(signal, tabdrift(data, cursor)) < gettonepower(signal, tabdrift(data, cursor + offset)):
+            cursor += offset
+    # wait cursor samples
+    print cursor
+    record(int(cursor / samplerate))
+
+
+def readdata():
+    detecttransmission()
     print 'Signal detected'
-    oversample = record(2*config.BITRATE)
+    synchronize()
+    print 'Synchronized'
 
-# detectTranssmission()
+
 start = time.time()
-record(120)
+readdata()
+
 print time.time() - start
+
 recorder.close()

@@ -110,3 +110,4 @@ def nrzi(source):
 
 def buildPacket(sourceAddress, destinationAddress, data):
     return attachPreamble(nrzi(fddi(computeCRC(createrawpacket(sourceAddress, destinationAddress, data)))))
+# add eom
