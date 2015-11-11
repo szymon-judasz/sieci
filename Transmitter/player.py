@@ -46,5 +46,11 @@ x = pf.nrzi(pf.inttobyte(1023, 10))
 print len(highsignal)
 print len(lowsignal)
 
+x = list()
+for i in range(0, 10):
+    x.append(0)
+    x.append(1)
+x.append(1)
+
 while True:
-    sendData([1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0])
+    sendData(x)
