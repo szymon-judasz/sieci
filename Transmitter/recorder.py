@@ -40,7 +40,7 @@ def quickfft(data):
 
 def gettonepower(tone, data):  # fixed, works independly from bitrate. Only samplerate as outer parameter
     fft = quickfft(data)
-    #amplitude = fft[int(tone * len(data) / samplerate)]  # = fft[(tone + 0.0) / config.BITRATE]  # get max from nearby values
+    # amplitude = fft[int(tone * len(data) / samplerate)]  # = fft[(tone + 0.0) / config.BITRATE]  # get max from nearby values
     return np.max(tabdrift(fft, int(tone * len(data) / samplerate) - 3, 6))
 
 
@@ -56,7 +56,8 @@ def detecttransmission(timeout=15):  # blocking operation, checked
     return False
 
 
-def tabdrift(source, padding, windowsize=samplerate / config.BITRATE):  # source is a tab, padding is an offset in terms of samples, samplerate/bitrate is window size, checked
+def tabdrift(source, padding,
+             windowsize=samplerate / config.BITRATE):  # source is a tab, padding is an offset in terms of samples, samplerate/bitrate is window size, checked
     source = np.array(source)
     x = np.split(source, [padding, padding + windowsize])
     return x[1]
@@ -94,24 +95,56 @@ def getadjust(data):
     original = gettonepower(signal, data)
     begining = gettonepower(signal, tabdrift(data, 0, 0.9 * samplerate / config.BITRATE))
     ending = gettonepower(signal, tabdrift(data, 0.1 * samplerate / config.BITRATE, 0.9 * samplerate / config.BITRATE))
-#    print 'original = ', original
-#    print 'begini = ', begining
-#    print 'ending = ', ending
+    #    print 'original = ', original
+    #    print 'begini = ', begining
+    #    print 'ending = ', ending
     if original < begining:
-#        print('--------------------------------------------')
+        #        print('--------------------------------------------')
         adjust = -1
     elif original < ending:
-#        print('+++++++++++++++++++++++++++++++++++++++++++++')
+        #        print('+++++++++++++++++++++++++++++++++++++++++++++')
         adjust = 1
-#    print adjust
+    #    print adjust
     return adjust
 
 
 def getbit(adjust=0):  # 1 means record longer, -1 shorter
     data = record(1.0 / config.BITRATE + 1.0 * adjust / config.LONGERSIGNAL)
-#    print '1 = ', gettonepower(config.HIGH, data)
-#    print '0 = ', gettonepower(config.LOW, data)
+    #    print '1 = ', gettonepower(config.HIGH, data)
+    #    print '0 = ', gettonepower(config.LOW, data)
     return 1 if getstronger(data) == config.HIGH else 0, getadjust(data)
+
+
+def getfivebits(adjust=0):
+    result = list()
+    for i in range(5):
+        data, adjust = getbit(adjust)
+        result.append(data)
+    print(result)
+    return result, adjust
+
+
+def nrzidecodefivebits(data, lastbit): # zaczynamy zerem
+    result = list()
+    for x in data:
+        result.append(1 if x != lastbit else 0)
+        lastbit = x
+    return result, lastbit
+
+def bitstointcode(data):
+    result = 0
+    for x in data:
+        result = 2 * result
+        result = result + x
+    return result
+
+
+def iseom(data):  # takes number code, of type int
+    return data == config.EOM
+
+
+def iscorrectdata(data):
+    return data in config.CODING.values()
 
 
 def preambuleabsorbing():
@@ -120,8 +153,25 @@ def preambuleabsorbing():
     while True:
         data, adjust = getbit(adjust)
         if data == prevdata:
-            return
+            return adjust
         prevdata = data
+
+
+def fddidecoding(source):
+    source = list(source)
+    result = list()
+    while len(source) > 0:
+        x = 0
+        for i in range(5):
+            x *= 2
+            x += source.pop(0)
+        result.append(config.CODING.values().index(x))
+    return result
+
+
+def twonibbletoint(source):
+    return source[0] * 0x10 + source[1]
+
 
 def readdata():
     if detecttransmission(45):
@@ -131,12 +181,26 @@ def readdata():
         return
     synchronize()
     print 'Synchronized'
-    preambuleabsorbing()
+    adjust = preambuleabsorbing()
     print 'End of Preambule'
+    x = list()
+    data, adjust = getfivebits(adjust)
+    data, lastbit = nrzidecodefivebits(data, config.NRZI_START)
+    while (not iseom(bitstointcode(data))) and iscorrectdata(bitstointcode(data)):
+        print 'got valid 5'
+        #print(data)
+        x.extend(data)
+        data, adjust = getfivebits(adjust)
+        data, lastbit = nrzidecodefivebits(data, lastbit)
+    if iseom(bitstointcode(data)):
+        print 'eom'
+    elif not iscorrectdata(bitstointcode(data)):
+        print 'incorrect'
+    print(twonibbletoint(fddidecoding(x)))
+    return x
 
 
-start = time.time()
-readdata()
-print time.time() - start
-
+#start = time.time()
+print readdata()
+#print time.time() - start
 recorder.close()

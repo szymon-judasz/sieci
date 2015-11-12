@@ -76,7 +76,7 @@ def fddi(source):
     return result
 
 
-def computeCRC(source):
+def attachCRC(source):
     data = list(source)
     for i in range(0, config.CRCSIZE):
         data.append(0)
@@ -107,7 +107,13 @@ def nrzi(source):
         result.append(data)
     return result
 
+def attacheom(source):
+    source = list(source)
+    endofmessage = inttobyte(config.EOM, config.EOMSIZE)
+    source.extend(endofmessage)
+    source.extend(endofmessage)
+    return source
+
 
 def buildPacket(sourceAddress, destinationAddress, data):
-    return attachPreamble(nrzi(fddi(computeCRC(createrawpacket(sourceAddress, destinationAddress, data)))))
-# add eom
+    return attachPreamble(nrzi(attacheom(fddi(attachCRC(createrawpacket(sourceAddress, destinationAddress, data))))))

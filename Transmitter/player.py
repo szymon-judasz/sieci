@@ -39,18 +39,7 @@ def sendData(source):
         player.drain()
         player.close()
 
-
-x = pf.nrzi(pf.inttobyte(1023, 10))
-
-#len(pf.buildPacket(127,127, "Ala ma kota"))
-print len(highsignal)
-print len(lowsignal)
-
-x = list()
-for i in range(0, 10):
-    x.append(0)
-    x.append(1)
-x.append(1)
-
 while True:
-    sendData(x)
+    packet = pf.buildPacket(127, 127, 'ala')
+    print(packet)
+    sendData(packet)
