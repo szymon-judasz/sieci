@@ -1,28 +1,16 @@
 #!/usr/bin/env python
-# vim:ts=4:sts=4:sw=4:expandtab
-
-import time
+__author__ = 'Szymon Judasz'
 import numpy as np
-
 import config
 import pulseaudio as pa
-
-recorder = pa.simple.open(direction=pa.STREAM_RECORD, format=pa.SAMPLE_S16LE, rate=44100, channels=1)
+import PacketFactory as pf
 
 samplerate = 44100
 
 
 def record(probeduration):
-    # if probeduration == 0:  # I have spent 1 hour with strange bug,
-    #    return              # Finally I have found that record(0) had been causing exception
-    # with pa.simple.open(direction=pa.STREAM_RECORD, format=pa.SAMPLE_S16LE, rate=samplerate, channels=1) as recorder:
-    # data = recorder.read(int(samplerate * probeduration) * 2)
     data = np.fromstring(recorder.read(int(samplerate * probeduration) * 2), np.int16)
     return data
-
-
-# def getmax(d):
-#    return np.argmax(d)
 
 
 def quickfft(data):
@@ -30,24 +18,15 @@ def quickfft(data):
     return d
 
 
-# def computefreq(data, period):  # TODO
-#    return getmax(quickfft(data)) / period
-
-
-# def pitchanalyze(period):
-#    return computefreq(record(period), period)
-
-
-def gettonepower(tone, data):  # fixed, works independly from bitrate. Only samplerate as outer parameter
+def gettonepower(tone, data):
     fft = quickfft(data)
-    # amplitude = fft[int(tone * len(data) / samplerate)]  # = fft[(tone + 0.0) / config.BITRATE]  # get max from nearby values
     return np.max(tabdrift(fft, int(tone * len(data) / samplerate) - 3, 6))
 
 
-def detecttransmission(timeout=15):  # blocking operation, checked
+def detecttransmission(timeout=15):
     tryno = timeout * config.BITRATE
     while tryno > 0:
-        data = record(1.0 / config.BITRATE)  # record len can be modified, it wont affect the code
+        data = record(1.0 / config.BITRATE)
         lowpower = gettonepower(config.LOW, data)
         highpower = gettonepower(config.HIGH, data)
         if lowpower > config.THRESHOLD or highpower > config.THRESHOLD:
@@ -57,36 +36,29 @@ def detecttransmission(timeout=15):  # blocking operation, checked
 
 
 def tabdrift(source, padding,
-             windowsize=samplerate / config.BITRATE):  # source is a tab, padding is an offset in terms of samples, samplerate/bitrate is window size, checked
+             windowsize=samplerate / config.BITRATE):
     source = np.array(source)
     x = np.split(source, [padding, padding + windowsize])
     return x[1]
 
 
-def getstronger(source):  # source is ie record(config.BITRATE) or any source of different size, checked
+def getstronger(source):  # getstronger(record(time))
     return config.HIGH if gettonepower(config.HIGH, source) > gettonepower(config.LOW, source) else config.LOW
 
 
-def synchronize():  # or get record(3 * config.Bitrate), start in the middle and move left, right
+def synchronize():
     data = record(2.0 / config.BITRATE)
     windowsize = samplerate / config.BITRATE
     cursor = 0
     offset = windowsize
-    # get lower signal
-    # move right and check if amplitude has risen
-    # if yes, add offset to cursor
-    # if no, nop
     signal = getstronger(tabdrift(data, 0))
     signal = config.LOW if signal == config.HIGH else config.HIGH
     for i in range(0, 4):
-        offset = int(1 * offset / 2)  # dividing by 2 wasn't working well
+        offset = int(offset / 2)
         if gettonepower(signal, tabdrift(data, cursor)) < gettonepower(signal, tabdrift(data, cursor + offset)):
             cursor += offset
-    # wait cursor samples
-    print 'cursor', (cursor + 0.0) / samplerate
-    print 'sample', samplerate
     if ((cursor + 0.0) / samplerate) > 0:
-        x = record((cursor + 0.0) / samplerate)
+        devnull = record((cursor + 0.0) / samplerate)
 
 
 def getadjust(data):
@@ -95,23 +67,15 @@ def getadjust(data):
     original = gettonepower(signal, data)
     begining = gettonepower(signal, tabdrift(data, 0, 0.9 * samplerate / config.BITRATE))
     ending = gettonepower(signal, tabdrift(data, 0.1 * samplerate / config.BITRATE, 0.9 * samplerate / config.BITRATE))
-    #    print 'original = ', original
-    #    print 'begini = ', begining
-    #    print 'ending = ', ending
     if original < begining:
-        #        print('--------------------------------------------')
         adjust = -1
     elif original < ending:
-        #        print('+++++++++++++++++++++++++++++++++++++++++++++')
         adjust = 1
-    #    print adjust
     return adjust
 
 
-def getbit(adjust=0):  # 1 means record longer, -1 shorter
+def getbit(adjust=0):
     data = record(1.0 / config.BITRATE + 1.0 * adjust / config.LONGERSIGNAL)
-    #    print '1 = ', gettonepower(config.HIGH, data)
-    #    print '0 = ', gettonepower(config.LOW, data)
     return 1 if getstronger(data) == config.HIGH else 0, getadjust(data)
 
 
@@ -120,30 +84,30 @@ def getfivebits(adjust=0):
     for i in range(5):
         data, adjust = getbit(adjust)
         result.append(data)
-    print(result)
     return result, adjust
 
 
-def nrzidecodefivebits(data, lastbit): # zaczynamy zerem
+def nrzidecodefivebits(data, lastbit):
     result = list()
     for x in data:
         result.append(1 if x != lastbit else 0)
         lastbit = x
     return result, lastbit
 
+
 def bitstointcode(data):
     result = 0
     for x in data:
-        result = 2 * result
+        result *= 2
         result = result + x
     return result
 
 
-def iseom(data):  # takes number code, of type int
+def fivebiseom(data):
     return data == config.EOM
 
 
-def iscorrectdata(data):
+def fivebiscorrectdata(data):
     return data in config.CODING.values()
 
 
@@ -165,42 +129,46 @@ def fddidecoding(source):
         for i in range(5):
             x *= 2
             x += source.pop(0)
-        result.append(config.CODING.values().index(x))
+        result.extend(pf.inttobyte(config.CODING.values().index(x), 4))
     return result
 
 
-def twonibbletoint(source):
-    return source[0] * 0x10 + source[1]
-
-
-def readdata():
+def readdata():  # TODO: refactor method/project structures and/or int array to string conversion
+    global recorder
+    recorder = pa.simple.open(direction=pa.STREAM_RECORD, format=pa.SAMPLE_S16LE, rate=44100, channels=1)
     if detecttransmission(45):
-        print 'Signal detected'
+        pass
     else:
-        print 'aborting'
         return
     synchronize()
-    print 'Synchronized'
     adjust = preambuleabsorbing()
-    print 'End of Preambule'
     x = list()
     data, adjust = getfivebits(adjust)
     data, lastbit = nrzidecodefivebits(data, config.NRZI_START)
-    while (not iseom(bitstointcode(data))) and iscorrectdata(bitstointcode(data)):
-        print 'got valid 5'
-        #print(data)
+    while (not fivebiseom(bitstointcode(data))) and fivebiscorrectdata(bitstointcode(data)):
         x.extend(data)
         data, adjust = getfivebits(adjust)
         data, lastbit = nrzidecodefivebits(data, lastbit)
-    if iseom(bitstointcode(data)):
-        print 'eom'
-    elif not iscorrectdata(bitstointcode(data)):
-        print 'incorrect'
-    print(twonibbletoint(fddidecoding(x)))
-    return x
+    if fivebiseom(bitstointcode(data)):
+        pass
+    elif not fivebiscorrectdata(bitstointcode(data)):
+        return -1, -1, -1
+    x = fddidecoding(x)
+    parts = np.split(x, [len(x) - config.CRCSIZE])
+    body = parts[0]
 
-
-#start = time.time()
-print readdata()
-#print time.time() - start
-recorder.close()
+    crc = parts[1]
+    expectedcrc = pf.computeCRC(body)
+    if crc.tolist() != expectedcrc:
+        -1, -1, -1
+    x = np.split(body, [8, 16])
+    address1 = x[0]
+    address2 = x[1]
+    message = x[2]
+    address1 = bitstointcode(address1)
+    address2 = bitstointcode(address2)
+    result = list()
+    for i in np.split(message, len(message) / 8):
+        result.append(bitstointcode(i))
+    recorder.close()
+    return address1, address2, result

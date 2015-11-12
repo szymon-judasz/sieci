@@ -1,5 +1,5 @@
-__author__ = 'Z500User'
-import numpy
+#!/usr/bin/env python
+__author__ = 'Szymon Judasz'
 ADDRESS_SIZE = 8
 ADDRESS_FIRST = True
 PREAMBLE = 0xAAAAAAAB
@@ -15,8 +15,8 @@ EOM = 0b01101
 EOMSIZE = 5
 
 # czestotliwosci sygnalow wysoki/niski
-HIGH = 880 * 2
-LOW = 440 * 2
+HIGH = 880
+LOW = 440
 
 LONGERSIGNAL = LOW if LOW < HIGH else HIGH
 
@@ -25,7 +25,7 @@ AMPLITUDE = 32000
 
 # jak glosny musi byc sygnal, by byl sygnalem
 THRESHOLD = 10000000
-BITRATE = 50
+BITRATE = 40
 
 NRZI_START = 0 # ktory bit startuje w nrzi
 
@@ -36,7 +36,7 @@ if LOW < 1.1 * HIGH and LOW > 0.9 * HIGH:
     raise Exception('Low and High signal frequencies are similar. Bugs will occur')
 if BITRATE > 45:
     print 'Runing at unsafe bandwidth'
-if LOW > 16000 or HIGH > 1600:
+if LOW > 16000 or HIGH > 16000:
     print 'Caution. Signals at very high frequency. Bugs may occur'
 if LOW < 30 or HIGH < 30:
     print 'Caution. Signals at very low frequency. Bugs may occur'

@@ -1,1 +1,2 @@
-__author__ = 'Z500User'
+#!/usr/bin/env python
+__author__ = 'Szymon Judasz'

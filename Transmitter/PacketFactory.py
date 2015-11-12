@@ -1,18 +1,14 @@
-__author__ = 'Z500User'
+#!/usr/bin/env python
+__author__ = 'Szymon Judasz'
 import config
 
 
-def inttobyte(address, size):
-    """
-
-    :param address: int number to be convered to binary representation
-    :return: list of 0 and 1
-    """
-    if 2 ** size <= address or address < 0 or not (type(address) is int or type(address) is long):
+def inttobyte(value, size):
+    if 2 ** size <= value or value < 0 or not (type(value) is int or type(value) is long):
         raise Exception('Invalid address')
 
     result = list()
-    x = address
+    x = value
     while x > 0:
         if x % 2 == 1:
             result.append(1)
@@ -26,13 +22,6 @@ def inttobyte(address, size):
 
 
 def createrawpacket(sourceAddress, destinationAddress, data):
-    """
-    source address, destination address and data, without crc, and 5-4
-    :param sourceAddress: list
-    :param destinationAddress: list
-    :param data: list or str
-    :return:
-    """
     result = list()
 
     if config.ADDRESS_FIRST:
@@ -76,7 +65,7 @@ def fddi(source):
     return result
 
 
-def attachCRC(source):
+def computeCRC(source):
     data = list(source)
     for i in range(0, config.CRCSIZE):
         data.append(0)
@@ -93,8 +82,11 @@ def attachCRC(source):
         result.append(data[len(data) - 1])
         del data[len(data) - 1]
     result.reverse()
+    return result
 
-    source.extend(result)
+
+def attachCRC(source):
+    source.extend(computeCRC(source))
     return source
 
 
@@ -106,6 +98,7 @@ def nrzi(source):
             data = 1 - data
         result.append(data)
     return result
+
 
 def attacheom(source):
     source = list(source)
