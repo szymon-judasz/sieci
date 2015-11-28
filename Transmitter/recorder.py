@@ -26,7 +26,7 @@ def gettonepower(tone, data):
 def detecttransmission(timeout=15):
     tryno = timeout * config.BITRATE
     while tryno > 0:
-        data = record(1.0 / config.BITRATE)
+        data = record(5.0 / config.BITRATE)
         lowpower = gettonepower(config.LOW, data)
         highpower = gettonepower(config.HIGH, data)
         if lowpower > config.THRESHOLD or highpower > config.THRESHOLD:
@@ -53,7 +53,7 @@ def synchronize():
     offset = windowsize
     signal = getstronger(tabdrift(data, 0))
     signal = config.LOW if signal == config.HIGH else config.HIGH
-    for i in range(0, 4):
+    for i in range(0, 1):
         offset = int(offset / 2)
         if gettonepower(signal, tabdrift(data, cursor)) < gettonepower(signal, tabdrift(data, cursor + offset)):
             cursor += offset
@@ -75,7 +75,7 @@ def getadjust(data):
 
 
 def getbit(adjust=0):
-    data = record(1.0 / config.BITRATE + 1.0 * adjust / config.LONGERSIGNAL)
+    data = record(1.0 / config.BITRATE + 2.0 * adjust / config.LONGERSIGNAL)
     return 1 if getstronger(data) == config.HIGH else 0, getadjust(data)
 
 
@@ -140,7 +140,8 @@ def readdata():  # TODO: refactor method/project structures and/or int array to 
         pass
     else:
         return
-    synchronize()
+    print 'det'
+    #synchronize()
     adjust = preambuleabsorbing()
     x = list()
     data, adjust = getfivebits(adjust)
@@ -160,7 +161,7 @@ def readdata():  # TODO: refactor method/project structures and/or int array to 
     crc = parts[1]
     expectedcrc = pf.computeCRC(body)
     if crc.tolist() != expectedcrc:
-        -1, -1, -1
+        -1, -1, -2
     x = np.split(body, [8, 16])
     address1 = x[0]
     address2 = x[1]
@@ -172,3 +173,8 @@ def readdata():  # TODO: refactor method/project structures and/or int array to 
         result.append(bitstointcode(i))
     recorder.close()
     return address1, address2, result
+
+text = ''
+for x in readdata()[2]:
+    text += chr(x)
+print(text)

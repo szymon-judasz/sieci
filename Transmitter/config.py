@@ -15,8 +15,8 @@ EOM = 0b01101
 EOMSIZE = 5
 
 # czestotliwosci sygnalow wysoki/niski
-HIGH = 880
-LOW = 440
+HIGH = 4400
+LOW = 2200
 
 LONGERSIGNAL = LOW if LOW < HIGH else HIGH
 
@@ -25,7 +25,7 @@ AMPLITUDE = 32000
 
 # jak glosny musi byc sygnal, by byl sygnalem
 THRESHOLD = 10000000
-BITRATE = 40
+BITRATE = 150
 
 NRZI_START = 0 # ktory bit startuje w nrzi
 
@@ -34,7 +34,7 @@ if ADDRESS_SIZE % 4 != 0:
     raise Exception('Invalid config. Address size must be divisible by 4')
 if LOW < 1.1 * HIGH and LOW > 0.9 * HIGH:
     raise Exception('Low and High signal frequencies are similar. Bugs will occur')
-if BITRATE > 45:
+if BITRATE > 150:
     print 'Runing at unsafe bandwidth'
 if LOW > 16000 or HIGH > 16000:
     print 'Caution. Signals at very high frequency. Bugs may occur'
