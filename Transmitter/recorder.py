@@ -140,7 +140,6 @@ def readdata():  # TODO: refactor method/project structures and/or int array to 
         pass
     else:
         return
-    print 'det'
     #synchronize()
     adjust = preambuleabsorbing()
     x = list()
@@ -174,7 +173,7 @@ def readdata():  # TODO: refactor method/project structures and/or int array to 
     recorder.close()
     return address1, address2, result
 
-text = ''
-for x in readdata()[2]:
-    text += chr(x)
-print(text)
+#text = ''
+#for x in readdata()[2]:
+#    text += chr(x)
+#print(text)

@@ -15,17 +15,17 @@ EOM = 0b01101
 EOMSIZE = 5
 
 # czestotliwosci sygnalow wysoki/niski
-HIGH = 4400
-LOW = 2200
+HIGH = 440
+LOW = 220
 
 LONGERSIGNAL = LOW if LOW < HIGH else HIGH
 
 # jak glosno nadawac
-AMPLITUDE = 32000
+AMPLITUDE = 640
 
 # jak glosny musi byc sygnal, by byl sygnalem
-THRESHOLD = 10000000
-BITRATE = 150
+THRESHOLD = 1000000
+BITRATE = 20
 
 NRZI_START = 0 # ktory bit startuje w nrzi
 
